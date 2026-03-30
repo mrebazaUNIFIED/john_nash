@@ -118,7 +118,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/schedules', function () {
         return Inertia::render('Schedules/Index', [
-            'schedules'    => \App\Models\Schedule::all(),
+            'schedules'    => \App\Models\InstitutionSchedule::all(),
             'institutions' => \App\Models\Institution::all()
         ]);
     })->name('schedules.index');

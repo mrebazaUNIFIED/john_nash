@@ -5,7 +5,7 @@ import axios from 'axios';
 export default function PerfilModal({ isOpen, onClose, userToEdit, onSuccess, currentUser }) {
     const [formData, setFormData] = useState({
         name: '',
-        email: '',
+        username: '',
         password: '',
         password_confirmation: '',
         role: '',
@@ -19,7 +19,7 @@ export default function PerfilModal({ isOpen, onClose, userToEdit, onSuccess, cu
         if (isOpen) {
             // Load institutions for the dropdown
             axios.get(route('database.users.index'), { params: { institutions_only: true } })
-                .catch(() => {});
+                .catch(() => { });
 
             // Load institutions via a simple GET to the institutions list
             axios.get('/database/institutions')
@@ -29,7 +29,7 @@ export default function PerfilModal({ isOpen, onClose, userToEdit, onSuccess, cu
             if (userToEdit) {
                 setFormData({
                     name: userToEdit.name || '',
-                    email: userToEdit.email || '',
+                    username: userToEdit.username || '',
                     password: '',
                     password_confirmation: '',
                     role: userToEdit.role || '',
@@ -38,7 +38,7 @@ export default function PerfilModal({ isOpen, onClose, userToEdit, onSuccess, cu
             } else {
                 setFormData({
                     name: '',
-                    email: '',
+                    username: '',
                     password: '',
                     password_confirmation: '',
                     role: currentUser?.role === 'ADMIN_COLEGIO' ? 'PORTERO' : '',
@@ -60,6 +60,11 @@ export default function PerfilModal({ isOpen, onClose, userToEdit, onSuccess, cu
 
         try {
             const submitData = { ...formData };
+
+            // Ensure username is set (fallback to name if empty)
+            if (!submitData.username || submitData.username.trim() === '') {
+                submitData.username = submitData.name.toLowerCase().replace(/\s+/g, '.') || '';
+            }
 
             // Remove password fields if not set (for edit)
             if (!submitData.password || submitData.password.trim() === '') {
@@ -125,19 +130,20 @@ export default function PerfilModal({ isOpen, onClose, userToEdit, onSuccess, cu
                         {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name[0]}</p>}
                     </div>
 
-                    {/* Email */}
+
+                    {/* Username */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Email / Usuario</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Nombre de Usuario</label>
                         <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
+                            type="text"
+                            name="username"
+                            value={formData.username}
                             onChange={handleChange}
                             required
-                            className={`w-full h-11 px-4 border rounded-lg focus:ring-2 focus:ring-institutional-500 outline-none transition-colors ${errors.email ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
-                            placeholder="correo@institucion.edu.pe"
+                            className={`w-full h-11 px-4 border rounded-lg focus:ring-2 focus:ring-institutional-500 outline-none transition-colors ${errors.username ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+                            placeholder="nombredeusuario"
                         />
-                        {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email[0]}</p>}
+                        {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username[0]}</p>}
                     </div>
 
                     {/* Password */}

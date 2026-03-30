@@ -37,39 +37,43 @@ class InstitutionController extends Controller
         }
 
         Institution::create([
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']),
-            'status' => $validated['status'],
+            'name'      => $validated['name'],
+            'slug'      => Str::slug($validated['name']),
             'is_active' => $validated['status'] === 'active',
-            'logo_url' => $logoUrl
+            'logo_url'  => $logoUrl,
         ]);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Institución creada correctamente.');
     }
 
     public function update(Request $request, string $id)
     {
         $institution = Institution::findOrFail($id);
-        
+
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'status' => 'required|in:active,inactive',
+            'name'      => 'required|string|max:255',
+            'status'    => 'required|in:active,inactive',
             'logo_file' => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('logo_file')) {
-            // Eliminar imagen anterior si se usara Storage local
+            // Eliminar imagen anterior si existe
+            if ($institution->logo_url) {
+                $oldPath = str_replace('/storage/', '', $institution->logo_url);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
             $path = $request->file('logo_file')->store('institutions', 'public');
             $institution->logo_url = '/storage/' . $path;
         }
 
-        $institution->name = $validated['name'];
-        $institution->slug = Str::slug($validated['name']);
-        $institution->status = $validated['status'];
+        $institution->name      = $validated['name'];
+        $institution->slug      = Str::slug($validated['name']);
         $institution->is_active = $validated['status'] === 'active';
         $institution->save();
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Institución actualizada correctamente.');
     }
 
     public function destroy(string $id)

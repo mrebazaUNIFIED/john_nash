@@ -25,12 +25,12 @@ class InstitutionScheduleController extends Controller
             'is_active' => true,
         ]);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Horario añadido exitosamente.');
     }
 
     public function destroy(InstitutionSchedule $schedule)
     {
         $schedule->delete();
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Horario eliminado.');
     }
 }

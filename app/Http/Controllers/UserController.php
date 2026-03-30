@@ -24,22 +24,24 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|string|in:SUPER_ADMIN,ADMIN_GENERAL,ADMIN_COLEGIO,PORTERO',
+            'name'           => 'required|string|max:255',
+            'username'       => 'required|string|max:255|unique:users',
+            'email'          => 'nullable|string|email|max:255|unique:users',
+            'password'       => ['required', 'confirmed', 'min:6'],
+            'role'           => 'required|string|in:SUPER_ADMIN,ADMIN_GENERAL,ADMIN_COLEGIO,PORTERO',
             'institution_id' => 'nullable|exists:institutions,id',
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-            'institution_id' => $validated['institution_id'],
+            'name'           => $validated['name'],
+            'username'       => $validated['username'],
+            'email'          => $validated['email'] ?? null,
+            'password'       => Hash::make($validated['password']),
+            'role'           => $validated['role'],
+            'institution_id' => $validated['institution_id'] ?? null,
         ]);
 
-        return response()->json($user, 201);
+        return response()->json($user->load('institution'), 201);
     }
 
     public function show(User $user)
@@ -50,20 +52,21 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'sometimes|required|string|in:SUPER_ADMIN,ADMIN_GENERAL,ADMIN_COLEGIO,PORTERO',
+            'name'           => 'sometimes|required|string|max:255',
+            'username'       => 'sometimes|required|string|max:255|unique:users,username,' . $user->id,
+            'email'          => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
+            'role'           => 'sometimes|required|string|in:SUPER_ADMIN,ADMIN_GENERAL,ADMIN_COLEGIO,PORTERO',
             'institution_id' => 'nullable|exists:institutions,id',
         ]);
 
         $user->update($validated);
 
-        if ($request->has('password')) {
-            $request->validate(['password' => ['required', 'confirmed', Rules\Password::defaults()]]);
+        if ($request->filled('password')) {
+            $request->validate(['password' => ['required', 'confirmed', 'min:6']]);
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-        return response()->json($user);
+        return response()->json($user->load('institution'));
     }
 
     public function destroy(User $user)

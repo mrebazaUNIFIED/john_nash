@@ -62,35 +62,40 @@ class AttendanceController extends Controller
         });
 
         // Inject FALTA rows only when searching a specific student in a date range
-        if ($search && $startDate && $endDate) {
-            $studentIds = $attendances->pluck('student_id')->unique();
-            if ($studentIds->count() === 1) {
-                $student = $attendances->first()?->student;
-                if ($student) {
-                    $existingDates = $attendances->pluck('date')->map(fn($d) => substr($d, 0, 10))->toArray();
-                    $period = new \DatePeriod(
-                        new \DateTime($startDate),
-                        new \DateInterval('P1D'),
-                        (new \DateTime($endDate))->modify('+1 day')
-                    );
-                    $faltaRows = [];
-                    foreach ($period as $day) {
-                        $dayStr = $day->format('Y-m-d');
-                        $dow    = (int) $day->format('N'); // 1=Mon…7=Sun
-                        if ($dow >= 6) continue;           // skip weekends
-                        if (!in_array($dayStr, $existingDates)) {
-                            $faltaRows[] = [
-                                'id'          => 'falta-' . $dayStr,
-                                'date'        => $dayStr,
-                                'time'        => null,
-                                'status'      => 'FALTA',
-                                'studentName' => "{$student->last_name_paternal} {$student->last_name_maternal}, {$student->first_name}",
-                                'grade'       => "{$student->grade} - {$student->section}",
-                            ];
+        if ($search && $startDate && $endDate && $attendances->isNotEmpty()) {
+            try {
+                $studentIds = $attendances->pluck('student_id')->unique();
+                if ($studentIds->count() === 1) {
+                    $student = $attendances->first()?->student;
+                    if ($student) {
+                        $existingDates = $attendances->pluck('date')->map(fn($d) => substr($d, 0, 10))->toArray();
+                        $period = new \DatePeriod(
+                            new \DateTime($startDate),
+                            new \DateInterval('P1D'),
+                            (new \DateTime($endDate))->modify('+1 day')
+                        );
+                        $faltaRows = [];
+                        foreach ($period as $day) {
+                            $dayStr = $day->format('Y-m-d');
+                            $dow    = (int) $day->format('N'); // 1=Mon…7=Sun
+                            if ($dow >= 6) continue;           // skip weekends
+                            if (!in_array($dayStr, $existingDates)) {
+                                $faltaRows[] = [
+                                    'id'          => 'falta-' . $dayStr,
+                                    'date'        => $dayStr,
+                                    'time'        => null,
+                                    'status'      => 'FALTA',
+                                    'studentName' => "{$student->last_name_paternal} {$student->last_name_maternal}, {$student->first_name}",
+                                    'grade'       => "{$student->grade} - {$student->section}",
+                                ];
+                            }
                         }
+                        $logs = $logs->merge($faltaRows)->sortByDesc('date')->values();
                     }
-                    $logs = $logs->merge($faltaRows)->sortByDesc('date')->values();
                 }
+            } catch (\Exception $e) {
+                // Return original logs if period generation fails
+                return response()->json($logs);
             }
         }
 

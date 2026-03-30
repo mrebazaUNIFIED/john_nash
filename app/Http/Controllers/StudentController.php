@@ -121,11 +121,19 @@ class StudentController extends Controller
 
         if ($student->photo_url) {
             $oldPath = str_replace('/storage/', '', $student->photo_url);
-            Storage::disk('public')->delete($oldPath);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
         }
 
         $path = $request->file('photo')->store("students/{$student->institution_id}", 'public');
         $student->photo_url = Storage::url($path);
+        
+        // Ensure the URL starts with / if it doesn't
+        if (!str_starts_with($student->photo_url, '/')) {
+            $student->photo_url = '/' . $student->photo_url;
+        }
+        
         $student->save();
 
         return response()->json(['photo_url' => $student->photo_url]);
@@ -147,16 +155,30 @@ class StudentController extends Controller
 
     public function uploadExcel(Request $request)
     {
+        $user = $request->user();
+
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
-            'level' => 'required|string',
-            'shift' => 'required|string',
-            'institution_id' => 'required|exists:institutions,id',
+            'file'           => 'required|mimes:xlsx,xls,csv|max:10240',
+            'level'          => 'required|string',
+            'shift'          => 'required|string',
+            'institution_id' => ($user->role === 'ADMIN_COLEGIO') ? 'nullable' : 'required|exists:institutions,id',
         ]);
+
+        // Use the user's institution if they are ADMIN_COLEGIO
+        $institutionId = ($user->role === 'ADMIN_COLEGIO')
+            ? $user->institution_id
+            : $request->institution_id;
+
+        if (!$institutionId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo determinar la institución destino.'
+            ], 422);
+        }
 
         try {
             $import = new StudentImport(
-                $request->institution_id,
+                $institutionId,
                 $request->level,
                 $request->shift
             );
@@ -164,10 +186,10 @@ class StudentController extends Controller
             Excel::import($import, $request->file('file'));
 
             return response()->json([
-                'success' => true,
-                'imported' => $import->importedCount,
-                'processed' => $import->importedCount, // Ideally read total rows, but for now...
-                'message' => 'Carga masiva completada exitosamente.'
+                'success'   => true,
+                'imported'  => $import->importedCount,
+                'processed' => $import->importedCount,
+                'message'   => 'Carga masiva completada exitosamente.',
             ]);
 
         } catch (\Exception $e) {

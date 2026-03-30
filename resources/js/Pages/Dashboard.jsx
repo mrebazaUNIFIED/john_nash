@@ -187,22 +187,7 @@ export default function Dashboard() {
 
                 </div>
 
-                {/* Puntualidad hoy (mini summary) */}
-                {!loading && stats && (
-                    <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-6 py-4 flex flex-wrap gap-6 items-center">
-                        <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Resumen de hoy</p>
-                        {[
-                            { label: 'Total', val: (stats.attendancesToday ?? 0), cls: 'text-slate-800' },
-                            { label: 'Puntuales', val: stats.punctualToday ?? 0, cls: 'text-green-600' },
-                            { label: 'Tardanzas', val: stats.tardanzasToday ?? 0, cls: 'text-amber-600' },
-                        ].map(({ label, val, cls }) => (
-                            <div key={label} className="flex items-center gap-2">
-                                <span className={`text-2xl font-black ${cls}`}>{val}</span>
-                                <span className="text-sm text-slate-500">{label}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
+
 
             </div>
         </AuthenticatedLayout>

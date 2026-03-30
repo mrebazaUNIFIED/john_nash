@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from '@/Components/Modal';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
 import InputError from '@/Components/InputError';
-import { Loader2, Trash2, Plus } from 'lucide-react';
+import { Loader2, Trash2, Plus, CheckCircle2, X } from 'lucide-react';
 import { useForm, router } from '@inertiajs/react';
 
 export function ScheduleModal({ isOpen, onClose, institution }) {
@@ -15,12 +16,19 @@ export function ScheduleModal({ isOpen, onClose, institution }) {
         tolerance_minutes: 10
     });
 
+    const [successMsg, setSuccessMsg] = useState('');
+
     const handleCreate = (e) => {
         e.preventDefault();
         if (institution?.id) {
             post(route('schedules.store', institution.id), {
                 preserveScroll: true,
-                onSuccess: () => reset(),
+                onSuccess: () => {
+                    reset();
+                    clearErrors();
+                    setSuccessMsg('¡Horario agregado correctamente!');
+                    setTimeout(() => setSuccessMsg(''), 3000);
+                },
             });
         }
     };
@@ -39,11 +47,30 @@ export function ScheduleModal({ isOpen, onClose, institution }) {
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="md">
             <div className="p-6">
-                <h2 className="text-lg font-bold text-slate-800 mb-6">
-                    Horarios: {institution.name}
-                </h2>
+                {/* Header con botón cerrar */}
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-bold text-slate-800">
+                        Horarios: {institution.name}
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Cerrar"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
                 <div className="space-y-6">
+                    {/* Mensaje de éxito */}
+                    {successMsg && (
+                        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">
+                            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                            {successMsg}
+                        </div>
+                    )}
+
                     {/* Formulario de agregar */}
                     <form onSubmit={handleCreate} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                         <h4 className="text-sm font-semibold text-slate-700 mb-3">Agregar Nuevo Horario</h4>
@@ -109,7 +136,10 @@ export function ScheduleModal({ isOpen, onClose, institution }) {
 
                     {/* Lista de horarios */}
                     <div>
-                        <h4 className="text-sm font-semibold text-slate-700 mb-2">Horarios Configurados</h4>
+                        <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                            Horarios Configurados
+                            <span className="ml-2 text-xs font-normal text-slate-400">({schedules.length})</span>
+                        </h4>
                         {schedules.length === 0 ? (
                             <p className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded border border-dashed border-slate-200">
                                 No hay horarios configurados.
@@ -137,6 +167,13 @@ export function ScheduleModal({ isOpen, onClose, institution }) {
                                 ))}
                             </div>
                         )}
+                    </div>
+
+                    {/* Botón cerrar en el footer */}
+                    <div className="pt-2 border-t border-slate-100 flex justify-end">
+                        <SecondaryButton onClick={onClose}>
+                            Cerrar
+                        </SecondaryButton>
                     </div>
                 </div>
             </div>

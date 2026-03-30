@@ -1,19 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Search, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InstitutionForm } from './Partials/InstitutionForm';
 import { ScheduleModal } from './Partials/ScheduleModal';
 
 export default function Index({ institutions }) {
+    const { flash } = usePage().props;
+
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingInstitution, setEditingInstitution] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    
+    const [flashMsg, setFlashMsg] = useState('');
+
     // Schedule Modal state
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [scheduleInstitution, setScheduleInstitution] = useState(null);
+
+    // Mostrar flash de éxito del backend
+    useEffect(() => {
+        if (flash?.success) {
+            setFlashMsg(flash.success);
+            const t = setTimeout(() => setFlashMsg(''), 3000);
+            return () => clearTimeout(t);
+        }
+    }, [flash]);
+
+    // Sincronizar scheduleInstitution cuando Inertia actualiza las instituciones
+    // (ej: después de agregar un horario)
+    useEffect(() => {
+        if (scheduleInstitution && institutions) {
+            const updated = institutions.find(i => i.id === scheduleInstitution.id);
+            if (updated) setScheduleInstitution(updated);
+        }
+    }, [institutions]);
 
     const openCreate = () => {
         setEditingInstitution(null);
@@ -28,6 +49,10 @@ export default function Index({ institutions }) {
     const openSchedules = (institution) => {
         setScheduleInstitution(institution);
         setIsScheduleModalOpen(true);
+    };
+
+    const handleCloseScheduleModal = () => {
+        setIsScheduleModalOpen(false);
     };
 
     const handleDelete = (id, name) => {
@@ -47,6 +72,15 @@ export default function Index({ institutions }) {
             <Head title="Instituciones" />
 
             <div className="space-y-6 fade-in w-full">
+
+                {/* Flash message */}
+                {flashMsg && (
+                    <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm font-medium shadow-sm">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                        {flashMsg}
+                    </div>
+                )}
+
                 <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <div>
                         <h2 className="text-xl font-bold text-slate-800">Instituciones Educativas</h2>
@@ -95,19 +129,23 @@ export default function Index({ institutions }) {
                                     <tr key={inst.id} className="bg-white border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
                                             <img 
-                                                src={inst.logo_url || 'https://ui-avatars.com/api/?name=IN&background=1e3a8a&color=fff'} 
+                                                src={inst.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.name)}&background=1e3a8a&color=fff`}
                                                 alt="Logo" 
                                                 className="w-10 h-10 rounded-full border border-slate-200 shadow-sm object-cover bg-white" 
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.name)}&background=1e3a8a&color=fff`;
+                                                }}
                                             />
                                             {inst.name}
                                         </td>
                                         <td className="px-6 py-4 text-center align-middle">
                                             <span className={cn(
                                                 "px-2.5 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1",
-                                                inst.status === 'active' ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                                                inst.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
                                             )}>
-                                                {inst.status === 'active' ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                                                {inst.status === 'active' ? "Activo" : "Inactivo"}
+                                                {inst.is_active ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                                {inst.is_active ? "Activo" : "Inactivo"}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right align-middle">
@@ -140,7 +178,7 @@ export default function Index({ institutions }) {
             {scheduleInstitution && (
                 <ScheduleModal
                     isOpen={isScheduleModalOpen}
-                    onClose={() => setIsScheduleModalOpen(false)}
+                    onClose={handleCloseScheduleModal}
                     institution={scheduleInstitution}
                 />
             )}

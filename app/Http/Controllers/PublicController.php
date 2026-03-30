@@ -14,7 +14,11 @@ class PublicController extends Controller
     public function index()
     {
         return Inertia::render('Public/Landing', [
-            'banners' => Banner::where('is_active', true)->orderBy('order')->get(),
+            'banners' => Banner::where('is_active', true)
+                ->whereNull('institution_id')
+                ->latest()
+                ->take(2)
+                ->get(),
             'institutions' => Institution::where('is_active', true)->get()
         ]);
     }
@@ -70,9 +74,9 @@ class PublicController extends Controller
             'todayRecord' => $todayRecord,
             'history' => $history,
             'banners' => Banner::where('is_active', true)
-                ->where(function($q) use ($institutionId) {
-                    $q->whereNull('institution_id')->orWhere('institution_id', $institutionId);
-                })->orderBy('order')->get()
+                ->where('institution_id', $institutionId)
+                ->orderBy('order')
+                ->get()
         ]);
     }
 }
