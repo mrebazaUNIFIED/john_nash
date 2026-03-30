@@ -39,7 +39,10 @@ export default function Index({ institution, statsToday }) {
         if (!code) return;
 
         try {
-            const response = await axios.post(route('attendance.register'), { student_code: code });
+            const response = await axios.post(route('attendance.register'), { 
+                student_code: code,
+                institution_id: institution?.id
+            });
 
             const result = response.data;
 
@@ -105,7 +108,7 @@ export default function Index({ institution, statsToday }) {
                     {/* Header Info */}
                     <div className="absolute top-6 left-6 bg-slate-950/50 rounded-xl px-5 py-3 border border-white/10 backdrop-blur-md flex items-center gap-4 shadow-2xl z-10">
                         <div className="w-10 h-10 rounded-lg bg-white p-1 shadow-inner">
-                            <img src={institution?.logo_url || '/images/default-logo.png'} className="w-full h-full object-contain" alt="logo" />
+                            <img src={institution?.logo_url || '/images/logo.jpeg'} className="w-full h-full object-contain" alt="logo" />
                         </div>
                         <div>
                             <p className="text-sm font-bold text-white uppercase tracking-tight">{institution?.name || 'Academia'}</p>
@@ -259,9 +262,9 @@ export default function Index({ institution, statsToday }) {
                 <ManualEntryModal
                     isOpen={isManualModalOpen}
                     onClose={() => setIsManualModalOpen(false)}
-                    onSelect={(codigo) => {
+                    onSelect={(codigo, instId) => {
                         setIsManualModalOpen(false);
-                        handleScan(codigo);
+                        handleScan(codigo, instId);
                     }}
                     institutionId={institution?.id}
                 />

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Users, School, Image as ImageIcon, CheckSquare, TrendingUp, Clock } from 'lucide-react';
 import axios from 'axios';
 import {
@@ -57,6 +57,7 @@ function QuickBtn({ href, icon: Icon, label, color }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function Dashboard() {
+    const { auth } = usePage().props;
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -83,6 +84,7 @@ export default function Dashboard() {
             color: 'text-blue-500',
             bg: 'bg-blue-50',
             href: route('institutions.index'),
+            show: ['SUPER_ADMIN', 'ADMIN_GENERAL'].includes(auth.user.role),
         },
         {
             title: 'Alumnos Registrados',
@@ -91,6 +93,7 @@ export default function Dashboard() {
             color: 'text-indigo-500',
             bg: 'bg-indigo-50',
             href: route('students.index'),
+            show: true,
         },
         {
             title: 'Asistencias Hoy',
@@ -99,6 +102,7 @@ export default function Dashboard() {
             color: 'text-green-500',
             bg: 'bg-green-50',
             href: route('reports.index'),
+            show: true,
         },
         {
             title: 'Banners Activos',
@@ -107,8 +111,9 @@ export default function Dashboard() {
             color: 'text-amber-500',
             bg: 'bg-amber-50',
             href: route('banners.index'),
+            show: true,
         },
-    ];
+    ].filter(c => c.show);
 
     return (
         <AuthenticatedLayout>
@@ -178,7 +183,9 @@ export default function Dashboard() {
                             <h3 className="font-semibold text-slate-800">Accesos Rápidos</h3>
                         </div>
                         <div className="p-6 grid grid-cols-2 gap-4">
-                            <QuickBtn href={route('institutions.index')} icon={School} label="Gestionar Instituciones" color="text-institutional-600" />
+                            {['SUPER_ADMIN', 'ADMIN_GENERAL'].includes(auth.user.role) && (
+                                <QuickBtn href={route('institutions.index')} icon={School} label="Gestionar Instituciones" color="text-institutional-600" />
+                            )}
                             <QuickBtn href={route('students.index')} icon={Users} label="Directorio Alumnos" color="text-indigo-600" />
                             <QuickBtn href={route('reports.index')} icon={CheckSquare} label="Reporte Diario" color="text-green-600" />
                             <QuickBtn href={route('scanner')} icon={Clock} label="Terminal Scanner" color="text-slate-600" />

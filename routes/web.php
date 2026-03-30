@@ -147,9 +147,8 @@ Route::get('/consulta', function (Request $request) {
     return \Inertia\Inertia::render('Public/Consulta', [
         'institution' => \App\Models\Institution::findOrFail($institutionId),
         'banners'     => \App\Models\Banner::where('is_active', true)
-            ->where(function ($q) use ($institutionId) {
-                $q->whereNull('institution_id')->orWhere('institution_id', $institutionId);
-            })->orderBy('order')->get()
+            ->where('institution_id', $institutionId) // Only show institution specific banners
+            ->orderBy('order')->get()
     ]);
 })->name('public.consulta');
 

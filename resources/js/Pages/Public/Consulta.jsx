@@ -42,7 +42,7 @@ export default function Consulta({ institution, banners }) {
         try {
             const response = await axios.get(`/api/v1/public/student/check`, {
                 params: {
-                    codigo: query,
+                    student_code: query,
                     institution_id: institution.id
                 }
             });
@@ -73,7 +73,7 @@ export default function Consulta({ institution, banners }) {
                 <div className="bg-white rounded-3xl shadow-xl shadow-slate-200 border border-slate-100 overflow-hidden">
                     <div className="bg-slate-900 py-6 px-8 flex items-center gap-5">
                         <div className="w-14 h-14 bg-white rounded-2xl p-1.5 shadow-inner flex items-center justify-center overflow-hidden">
-                            <img src={institution.logo_url || '/images/default-logo.png'} alt="Logo" className="w-full h-full object-contain" />
+                            <img src={institution.logo_url || '/images/logo.jpeg'} alt="Logo" className="w-full h-full object-contain" />
                         </div>
                         <div>
                             <p className="text-xs font-black text-institutional-400 uppercase tracking-widest mb-0.5">Institución Seleccionada</p>

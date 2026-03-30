@@ -24,6 +24,10 @@ class InstitutionController extends Controller
 
     public function store(Request $request)
     {
+        if (!in_array($request->user()->role, ['SUPER_ADMIN', 'ADMIN_GENERAL'])) {
+            return redirect()->back()->with('error', 'No tiene permisos para crear instituciones.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'status' => 'required|in:active,inactive',
@@ -48,6 +52,10 @@ class InstitutionController extends Controller
 
     public function update(Request $request, string $id)
     {
+        if (!in_array($request->user()->role, ['SUPER_ADMIN', 'ADMIN_GENERAL'])) {
+            return redirect()->back()->with('error', 'No tiene permisos para modificar esta institución.');
+        }
+
         $institution = Institution::findOrFail($id);
 
         $validated = $request->validate([
@@ -78,6 +86,10 @@ class InstitutionController extends Controller
 
     public function destroy(string $id)
     {
+        if (!in_array(auth()->user()->role, ['SUPER_ADMIN', 'ADMIN_GENERAL'])) {
+            return redirect()->back()->with('error', 'No tiene permisos para eliminar instituciones.');
+        }
+
         $institution = Institution::findOrFail($id);
         $institution->delete();
         

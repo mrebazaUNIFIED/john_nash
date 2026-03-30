@@ -27,7 +27,7 @@ export default function Landing({ institutions, banners }) {
                             onClick={() => handleSelect(inst)}
                         >
                             <img
-                                src={inst.logo_url || '/images/default-logo.png'}
+                                src={inst.logo_url || '/images/logo.jpeg'}
                                 alt={`Logo ${inst.name}`}
                                 className="w-16 h-16 rounded-full object-contain border border-slate-100 group-hover:ring-2 ring-institutional-200 transition-all"
                             />

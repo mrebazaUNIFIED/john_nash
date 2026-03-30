@@ -37,7 +37,9 @@ function BannerColumn({ banners, side, loading, show }) {
 }
 
 export default function PublicLayout({ children, banners = [], loading = false }) {
-    const showColumns = loading || (banners && banners.length > 0);
+    // Show columns if there are banners or if we are in a loading state. 
+    // Always showing the layout structure avoids layout shifts.
+    const showColumns = true; 
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -70,7 +72,7 @@ export default function PublicLayout({ children, banners = [], loading = false }
             <main className="flex-grow flex flex-row w-full">
                 <BannerColumn banners={banners} side="left" loading={loading} show={showColumns} />
                 
-                <div className="flex-grow flex flex-col min-w-0 px-4 py-4 min-w-[340px]">
+                <div className="flex-grow flex flex-col px-4 py-4 min-w-[340px]">
                     {children}
                 </div>
 

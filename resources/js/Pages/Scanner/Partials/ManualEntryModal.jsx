@@ -16,17 +16,31 @@ export default function ManualEntryModal({ isOpen, onClose, onSelect, institutio
         }
     }, [isOpen]);
 
+    // Live search with debounce
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (query.trim().length >= 2) {
+                handleSearch();
+            } else if (query.trim().length === 0) {
+                setResults([]);
+            }
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [query]);
+
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
-        if (!query.trim()) return;
+        const searchTerm = query.trim();
+        if (!searchTerm) return;
 
         setLoading(true);
         try {
             const response = await axios.get(route('students.database'), {
                 params: {
-                    search: query,
+                    search: searchTerm,
                     institution_id: institutionId,
-                    per_page: 10
+                    limit: 15
                 }
             });
             // index returns paginated { data: [...] } or plain array
@@ -70,7 +84,7 @@ export default function ManualEntryModal({ isOpen, onClose, onSelect, institutio
                     {results.map(student => (
                         <div
                             key={student.id}
-                            onClick={() => onSelect(student.student_code)}
+                            onClick={() => onSelect(student.student_code, student.institution_id)}
                             className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:border-institutional-500 hover:bg-slate-50 cursor-pointer transition-colors group"
                         >
                             <img src={student.photo_url || '/images/default-avatar.png'} alt="Foto" className="w-10 h-10 rounded-full object-cover bg-slate-100 border border-slate-200" />

@@ -68,17 +68,23 @@ class AttendanceController extends Controller
                 if ($studentIds->count() === 1) {
                     $student = $attendances->first()?->student;
                     if ($student) {
-                        $existingDates = $attendances->pluck('date')->map(fn($d) => substr($d, 0, 10))->toArray();
+                        $existingDates    = $attendances->pluck('date')->map(fn($d) => substr($d, 0, 10))->toArray();
+                        $studentCreatedAt = $student->created_at ? $student->created_at->toDateString() : '2000-01-01';
+
                         $period = new \DatePeriod(
                             new \DateTime($startDate),
                             new \DateInterval('P1D'),
                             (new \DateTime($endDate))->modify('+1 day')
                         );
+                        
                         $faltaRows = [];
                         foreach ($period as $day) {
                             $dayStr = $day->format('Y-m-d');
                             $dow    = (int) $day->format('N'); // 1=Mon…7=Sun
+                            
                             if ($dow >= 6) continue;           // skip weekends
+                            if ($dayStr < $studentCreatedAt) continue; // skip days before registration
+                            
                             if (!in_array($dayStr, $existingDates)) {
                                 $faltaRows[] = [
                                     'id'          => 'falta-' . $dayStr,
@@ -94,7 +100,7 @@ class AttendanceController extends Controller
                     }
                 }
             } catch (\Exception $e) {
-                // Return original logs if period generation fails
+                // Silently fallback to partial logs instead of 500 error
                 return response()->json($logs);
             }
         }
@@ -175,17 +181,36 @@ class AttendanceController extends Controller
 
     public function register(Request $request)
     {
-        $request->validate(['student_code' => 'required|string']);
+        $request->validate([
+            'student_code'   => 'required|string',
+            'institution_id' => 'nullable|exists:institutions,id',
+        ]);
+ 
+        $user = $request->user();
+        
+        // Determine which institution to use
+        $institutionId = ($user->role === 'ADMIN_COLEGIO')
+            ? $user->institution_id
+            : ($request->institution_id ?? $user->institution_id);
+ 
+        // If still no institutionId, try to find the student by code anyway (to detect their institution)
+        if (!$institutionId) {
+            $student = Student::where('student_code', $request->student_code)->first();
+            if ($student) {
+                $institutionId = $student->institution_id;
+            }
+        }
 
-        $user          = $request->user();
-        $institutionId = $user->institution_id;
-
+        if (!$institutionId) {
+            return response()->json(['success' => false, 'message' => 'No se pudo determinar la institución del alumno.'], 422);
+        }
+ 
         $student = Student::where('student_code', $request->student_code)
             ->where('institution_id', $institutionId)
             ->first();
-
+ 
         if (!$student) {
-            return response()->json(['success' => false, 'message' => 'Alumno no encontrado'], 404);
+            return response()->json(['success' => false, 'message' => 'Alumno no encontrado en esta institución.'], 404);
         }
         if (!$student->is_active) {
             return response()->json(['success' => false, 'message' => 'Alumno inactivo'], 403);
